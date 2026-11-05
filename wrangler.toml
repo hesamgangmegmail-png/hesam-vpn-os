@@ -1,0 +1,17 @@
+name = "hesam-vpn-os-api"
+main = "worker/src/index.ts"
+compatibility_date = "2025-02-14"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "hesam-vpn-os-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+migrations_dir = "database/migrations"
+
+[vars]
+APP_NAME = "HESAM VPN OS"
+BOOTSTRAP_ADMIN_USERNAME = "admin"
+# Replace with the exact deployed Pages origin before production deployment.
+PANEL_ORIGIN = "http://localhost:5173"
+# Optional comma-separated additional exact origins; do not use '*'.
+ADDITIONAL_ALLOWED_ORIGINS = ""

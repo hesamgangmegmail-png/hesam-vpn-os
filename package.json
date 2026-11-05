@@ -1,0 +1,36 @@
+{
+  "name": "hesam-vpn-os",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm test && npm run build",
+    "deploy:pages": "npm run build && wrangler pages deploy frontend/dist",
+    "deploy:worker": "wrangler deploy",
+    "db:create": "wrangler d1 create hesam-vpn-os-db",
+    "db:migrate:local": "wrangler d1 migrations apply hesam-vpn-os-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply hesam-vpn-os-db --remote"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "hono": "^4.7.2",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250214.0",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0",
+    "vitest": "^2.1.8",
+    "wrangler": "^3.109.2"
+  }
+}

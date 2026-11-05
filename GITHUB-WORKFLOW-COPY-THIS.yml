@@ -1,0 +1,74 @@
+name: Deploy HESAM VPN OS
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Extract project ZIP
+        run: |
+          unzip -q HESAM-VPN-OS-v0.2-ANDROID-DEPLOY.zip -d source
+          test -f source/HESAM-VPN-OS-v0.2-android/package.json
+      - name: Install dependencies
+        working-directory: source/HESAM-VPN-OS-v0.2-android
+        run: npm install
+      - name: Configure Cloudflare values
+        working-directory: source/HESAM-VPN-OS-v0.2-android
+        env:
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+          PANEL_ORIGIN: ${{ secrets.PANEL_ORIGIN }}
+        run: |
+          python3 - <<'PYTHON'
+          import os
+          from pathlib import Path
+          p = Path("wrangler.toml")
+          s = p.read_text()
+          db = os.environ["D1_DATABASE_ID"].strip()
+          origin = os.environ["PANEL_ORIGIN"].strip().rstrip("/")
+          if not db or not origin.startswith("https://"):
+              raise SystemExit("D1_DATABASE_ID یا PANEL_ORIGIN تنظیم نشده است.")
+          s = s.replace("REPLACE_WITH_YOUR_D1_DATABASE_ID", db)
+          s = s.replace('PANEL_ORIGIN = "http://localhost:5173"', f'PANEL_ORIGIN = "{origin}"')
+          p.write_text(s)
+          PYTHON
+      - name: Apply D1 migrations
+        working-directory: source/HESAM-VPN-OS-v0.2-android
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler d1 migrations apply hesam-vpn-os-db --remote
+      - name: Deploy Worker
+        working-directory: source/HESAM-VPN-OS-v0.2-android
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy
+      - name: Set admin password secret
+        working-directory: source/HESAM-VPN-OS-v0.2-android
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BOOTSTRAP_ADMIN_PASSWORD: ${{ secrets.BOOTSTRAP_ADMIN_PASSWORD }}
+        run: |
+          test -n "$BOOTSTRAP_ADMIN_PASSWORD"
+          printf '%s' "$BOOTSTRAP_ADMIN_PASSWORD" | npx wrangler secret put BOOTSTRAP_ADMIN_PASSWORD
+      - name: Build Pages
+        working-directory: source/HESAM-VPN-OS-v0.2-android
+        env:
+          VITE_API_BASE: ${{ secrets.WORKER_API_BASE }}
+        run: |
+          test -n "$VITE_API_BASE"
+          npm run build
+      - name: Deploy Pages
+        working-directory: source/HESAM-VPN-OS-v0.2-android
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PAGES_PROJECT_NAME: ${{ secrets.PAGES_PROJECT_NAME }}
+        run: npx wrangler pages deploy frontend/dist --project-name "$PAGES_PROJECT_NAME"
