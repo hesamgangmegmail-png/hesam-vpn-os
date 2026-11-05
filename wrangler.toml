@@ -5,7 +5,7 @@ compatibility_date = "2025-02-14"
 [[d1_databases]]
 binding = "DB"
 database_name = "hesam-vpn-os-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "ee749a9d-989a-4f79-ba8f-506c060b7561"
 migrations_dir = "database/migrations"
 
 [vars]
